@@ -456,6 +456,8 @@ class ServiceOperation(object):
     def __call__(self, args, parsed_globals):
         # Once we know we're trying to call a particular operation
         # of a service we can go ahead and load the parameters.
+        if self._operation_model.deprecated:
+            sys.stderr.write('** Warning this operation is deprecated! **\n')
         event = 'before-building-argument-table-parser.%s.%s' % \
             (self._parent_name, self._name)
         self._emit(event, argument_table=self.arg_table, args=args,
