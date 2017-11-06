@@ -39,6 +39,12 @@ PARAMFILE_DISABLED = set([
     'cloudformation.create-stack.stack-policy-url',
     'cloudformation.update-stack.stack-policy-url',
     'cloudformation.set-stack-policy.stack-policy-url',
+    'cognito-idp.create-user-pool-client.callback-urls',
+    'cognito-idp.create-user-pool-client.logout-urls',
+    'cognito-idp.create-user-pool-client.default-redirect-uri',
+    'cognito-idp.update-user-pool-client.callback-urls',
+    'cognito-idp.update-user-pool-client.logout-urls',
+    'cognito-idp.update-user-pool-client.default-redirect-uri',
     # aws cloudformation package --template-file
     'custom.package.template-file',
     # aws cloudformation deploy --template-file
