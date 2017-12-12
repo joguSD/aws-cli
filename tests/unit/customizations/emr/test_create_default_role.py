@@ -13,7 +13,7 @@
 import mock
 
 from botocore.compat import json
-from botocore.vendored import requests
+import requests
 from botocore.exceptions import ClientError
 
 import awscli.customizations.emr.emrutils as emrutils

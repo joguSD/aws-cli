@@ -52,8 +52,7 @@ from botocore.session import Session
 from botocore.exceptions import ClientError
 from botocore.exceptions import WaiterError
 import botocore.loaders
-from botocore.vendored import requests
-
+import requests
 import awscli.clidriver
 from awscli.plugin import load_plugins
 from awscli.clidriver import CLIDriver

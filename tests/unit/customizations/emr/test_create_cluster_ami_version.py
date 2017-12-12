@@ -21,7 +21,7 @@ import copy
 import os
 import json
 from mock import patch
-from botocore.vendored import requests
+import requests
 
 
 DEFAULT_CLUSTER_NAME = "Development Cluster"

@@ -20,7 +20,7 @@ import sys
 import mock
 import nose
 from awscli.compat import six
-from botocore.vendored.requests import models
+from requests import models
 from botocore.exceptions import NoCredentialsError
 from botocore.compat import OrderedDict
 import botocore.model
@@ -802,7 +802,7 @@ class TestHTTPParamFileDoesNotExist(BaseAWSCommandParamsTest):
         error_msg = ("Error parsing parameter '--filters': "
                      "Unable to retrieve http://does/not/exist.json: "
                      "received non 200 status code of 404")
-        with mock.patch('botocore.vendored.requests.get') as get:
+        with mock.patch('requests.get') as get:
             get.return_value.status_code = 404
             self.assert_params_for_cmd(
                 'ec2 describe-instances --filters http://does/not/exist.json',
