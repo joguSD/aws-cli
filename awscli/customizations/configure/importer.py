@@ -54,7 +54,18 @@ class ConfigureImportCommand(BasicCommand):
          ),
          'default': '',
          'cli_type_name': 'string'},
+        {'name': 'username',
+         'dest': 'username',
+         'help_text': (
+             'Set a specific username when the CSV does not contain it.'
+         ),
+         'cli_type_name': 'string'},
     ]
+
+    _USERNAME_HEADER = 'User Name'
+    _AKID_HEADER = 'Access Key ID'
+    _SAK_HEADER = 'Secret Access key'
+    _EXPECTED_HEADERS = [_USERNAME_HEADER, _AKID_HEADER, _SAK_HEADER]
 
     def __init__(self, session, csv_parser=None, importer=None,
                  out_stream=None):
@@ -76,10 +87,16 @@ class ConfigureImportCommand(BasicCommand):
         config_file = self._session.get_config_variable('credentials_file')
         return os.path.expanduser(config_file)
 
-    def _import_csv(self, contents):
+    def _import_csv(self, contents, username):
         config_path = self._get_config_path()
-        credentials = self._csv_parser.parse_credentials(contents)
+        if username is None:
+            expected_headers = self._EXPECTED_HEADERS
+        else:
+            expected_headers = [self._AKID_HEADER, self._SAK_HEADER]
+        credentials = self._csv_parser.parse_credentials(contents, expected_headers)
         for credential in credentials:
+            if credential[0] is None:
+                credential = (username, credential[1], credential[2])
             self._importer.import_credential(
                 credential, config_path,
                 profile_prefix=self._profile_prefix,
@@ -90,7 +107,7 @@ class ConfigureImportCommand(BasicCommand):
     def _run_main(self, parsed_args, parsed_globals):
         self._csv_parser.strict = not parsed_args.skip_invalid
         self._profile_prefix = parsed_args.profile_prefix
-        self._import_csv(parsed_args.csv)
+        self._import_csv(parsed_args.csv, parsed_args.username)
 
 
 class CredentialParserError(Exception):
@@ -98,15 +115,14 @@ class CredentialParserError(Exception):
 
 
 class CSVCredentialParser(object):
-    _USERNAME_HEADER = 'User Name'
-    _AKID_HEADER = 'Access Key ID'
-    _SAK_HEADER = 'Secret Access key'
-    _EXPECTED_HEADERS = [_USERNAME_HEADER, _AKID_HEADER, _SAK_HEADER]
-
     _EMPTY_CSV = 'Provided CSV contains no contents'
     _HEADER_NOT_FOUND = 'Expected header "%s" not found'
     _ROW_MISSING_HEADER = 'Row missing value for header "%s"'
     _INVALID_ROW = 'Failed to parse entry #%s: %s'
+
+    _USERNAME_HEADER = 'User Name'
+    _AKID_HEADER = 'Access Key ID'
+    _SAK_HEADER = 'Secret Access key'
 
     def __init__(self, strict=True):
         self.strict = strict
@@ -117,9 +133,9 @@ class CSVCredentialParser(object):
     def _parse_csv_headers(self, header):
         return [self._format_header(h) for h in header.split(',')]
 
-    def _extract_expected_header_indices(self, headers):
+    def _extract_expected_header_indices(self, headers, expected_headers):
         indices = {}
-        for header in self._EXPECTED_HEADERS:
+        for header in expected_headers:
             formatted_header = self._format_header(header)
             if formatted_header not in headers:
                 raise CredentialParserError(self._HEADER_NOT_FOUND % header)
@@ -152,13 +168,15 @@ class CSVCredentialParser(object):
             parsed_rows.append(item)
         return parsed_rows
 
-    def _parse_csv(self, csv):
+    def _parse_csv(self, csv, expected_headers):
         if not csv.strip():
             raise CredentialParserError(self._EMPTY_CSV)
 
         lines = csv.splitlines()
         parsed_headers = self._parse_csv_headers(lines[0])
-        header_indices = self._extract_expected_header_indices(parsed_headers)
+        header_indices = self._extract_expected_header_indices(
+            parsed_headers, expected_headers
+        )
         return self._parse_csv_rows(lines[1:], header_indices)
 
     def _convert_rows_to_credentials(self, parsed_rows):
@@ -170,12 +188,12 @@ class CSVCredentialParser(object):
             credentials.append((username, akid, sak))
         return credentials
 
-    def parse_credentials(self, contents):
+    def parse_credentials(self, contents, expected_headers):
         # Expected format is:
         # User name,Password,Access key ID,Secret access key,Console login link
         # username1,pw,akid,sak,https://console.link
         # username2,pw,akid,sak,https://console.link
-        parsed_rows = self._parse_csv(contents)
+        parsed_rows = self._parse_csv(contents, expected_headers)
         return self._convert_rows_to_credentials(parsed_rows)
 
 
